@@ -137,10 +137,11 @@ BOOL View::OnInitDialog()
 	m_resizer.AddChild(m_lblPagine, bottomright, 0);
 
 	// colonne lista
-	m_list.SetExtendedStyle(LVS_EX_FULLROWSELECT);
+	m_list.SetExtendedStyle(LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
 	m_list.InsertColumn(0, _T("N"), 0, 50);
 	m_list.InsertColumn(1, _T("Cliente"), 0, 400);
-	m_list.InsertColumn(2, _T("Data"), 0, 100);
+	m_list.InsertColumn(2, _T("Data"), 0, 150);
+	m_list.InsertColumn(3, _T("Prodotti"), 0, 100);
 
 	return true;
 }
@@ -214,6 +215,11 @@ void View::InsertItem(const Order & order)
 	it.iSubItem = 2;
 	std::wstring date = order.GetCreationDate();
 	it.pszText = (LPWSTR)date.c_str();
+	m_list.SetItem(it);
+
+	it.iSubItem = 3;
+	std::wstring nprodotti = std::to_wstring(order.Items.size());
+	it.pszText = (LPWSTR)nprodotti.c_str();
 	m_list.SetItem(it);
 
 	m_list.SetItemData(index, (DWORD_PTR)&order);

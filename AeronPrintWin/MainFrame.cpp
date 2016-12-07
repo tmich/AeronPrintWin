@@ -232,7 +232,16 @@ void CMainFrame::OnSelectedOrder()
 {
 	Order o;
 	m_view.GetSelectedOrder(o);
-	MessageBox(o.GetCustomerName().c_str(), _T("Doppio click"), MB_ICONINFORMATION);
+	std::wstring text = o.GetCustomerName();
+	text.append(_T("\n"));
+	for (auto& it : o.Items)
+	{
+		text.append(std::to_wstring(it.GetQty()));
+		text.append(_T("x "));
+		text.append(it.GetName());
+		text.append(_T("\n"));
+	}
+	MessageBox(text.c_str(), std::to_wstring(o.GetRemoteId()).c_str(), MB_ICONINFORMATION);
 }
 
 BOOL CMainFrame::LoadRegistrySettings(LPCTSTR szKeyName)

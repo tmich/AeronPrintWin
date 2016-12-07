@@ -59,7 +59,7 @@ public:
 	std::wstring GetCustomerCode() const { return mCustomerCode; }
 	void SetCustomerCode(std::wstring customerCode) { mCustomerCode = customerCode; }
 
-	std::wstring GetCreationDate() const { return mCreationDate; }
+	std::wstring GetCreationDate() const;
 	void SetCreationDate(std::wstring creationDate) { mCreationDate = creationDate; }
 
 	bool IsRead() const { return mRead; }
