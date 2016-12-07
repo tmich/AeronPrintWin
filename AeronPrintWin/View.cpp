@@ -26,10 +26,6 @@ void View::SetOrders(const std::vector<Order>& orders)
 
 void View::Update()
 {
-}
-
-void View::UpdateOrders()
-{
 	m_list.DeleteAllItems();
 
 	for (auto& o : m_orders)
@@ -76,15 +72,39 @@ std::wstring View::GetSearchText() const
 void View::SetPages(int pages)
 {
 	m_pages = pages;
-	//::EnableWindow(m_cmbPagine, (m_pages >= 1));
+	auto sel = m_cmbPagine.GetCurSel();
+	
 	m_cmbPagine.ResetContent();
 
 	for (int p = 1; p <= m_pages; p++)
 	{
 		m_cmbPagine.AddString(std::to_wstring(p).c_str());
 	}
-	m_cmbPagine.SetCurSel(0);
+
+	m_cmbPagine.SetCurSel(sel >= 0 ? sel : 0);
 }
+
+int View::GetSelectedPage()
+{
+	try
+	{
+		return std::stoi(m_cmbPagine.GetWindowText().c_str());
+	}
+	catch (const std::exception&)
+	{
+		return 1;
+	}
+}
+
+//void View::SetSelectedPage(int page)
+//{
+//	LPCTSTR pp = std::to_wstring(page).c_str();
+//	int p = m_cmbPagine.FindStringExact(0, pp);
+//	if (p >= 0)
+//	{
+//		m_cmbPagine.SetCurSel(p);
+//	}
+//}
 
 HWND View::Create(HWND hParent)
 {
@@ -140,16 +160,37 @@ BOOL View::OnCommand(WPARAM wParam, LPARAM lParam)
 			return GetParent().SendNotifyMessage(WM_COMMAND, IDC_CANCCERCA, lParam);
 	}
 
-	//switch (LOWORD(wParam))
-	//{
-	//case -1:	// non serve a niente...
-	//	break;
-	//default:	// lo rimbalzo al frame (il controller)
-	//	GetParent().SendNotifyMessage(WM_COMMAND, wParam, lParam);
-	//	break;
-	//}
+	if ((HIWORD(wParam) == CBN_SELCHANGE) && (LOWORD(wParam) == IDC_CMBPAG))
+		return GetParent().SendNotifyMessage(WM_COMMAND, IDC_CMBPAG, lParam);
 
-	return GetParent().SendNotifyMessage(WM_COMMAND, wParam, lParam);
+	switch (LOWORD(wParam))
+	{
+	case IDC_LIST1:
+	case IDC_CMBPAG:
+	case IDC_TXTCERCA:
+		break;
+	default:	// lo rimbalzo al frame (il controller)
+		return GetParent().SendNotifyMessage(WM_COMMAND, wParam, lParam);
+	}
+
+	return false;
+}
+
+LRESULT View::OnNotify(WPARAM wParam, LPARAM lParam)
+{
+	if (((LPNMHDR)lParam)->code == NM_DBLCLK && LOWORD(wParam) == IDC_LIST1)
+	{
+		//MessageBox(_T("doppio click!"), _T("bravo"), MB_ICONINFORMATION);
+		return GetParent().SendNotifyMessage(WM_COMMAND, wParam, lParam);
+	}
+
+	if (HIWORD(wParam) == CBN_SELCHANGE && LOWORD(wParam) == IDC_CMBPAG)
+	{
+		// cambio pagina
+		return GetParent().SendNotifyMessage(WM_COMMAND, wParam, lParam);
+	}
+
+	return CDialog::OnNotify(wParam, lParam);
 }
 
 void View::InsertItem(const Order & order)

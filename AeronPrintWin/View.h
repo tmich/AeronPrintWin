@@ -21,18 +21,19 @@ public:
 	void AddOrder(const Order& order);
 	void SetOrders(const std::vector<Order>& orders);
 	void Update();
-	void UpdateOrders();
 	void ClearOrders();
 	void CanCheckOrders(bool flag);
 	bool GetSelectedOrder(Order& order) const;
 	std::wstring GetSearchText() const;
 	void SetPages(int pages);
-	int GetSelectedPage() { return std::stoi(m_cmbPagine.GetWindowText().c_str()); }
+	int GetSelectedPage();
+	//void SetSelectedPage(int page);
 protected:
 	virtual HWND Create(HWND hParent) override;
 	virtual BOOL OnInitDialog() override;
 	virtual INT_PTR DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
 	virtual BOOL OnCommand(WPARAM wParam, LPARAM lParam) override;
+	virtual LRESULT OnNotify(WPARAM wParam, LPARAM lParam) override;
 	virtual void OnCancel() override {};
 	virtual void OnOK() override {};
 private:

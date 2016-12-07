@@ -14,8 +14,7 @@ public:
 	long Pages()
 	{
 		fesetround(FE_UPWARD);
-		int iPages = lrint(ceil(m_elements.size() / m_pagesize));
-		return iPages > 0 ? iPages : 1;
+		return lrint(ceil(m_elements.size() / m_pagesize));
 	}
 
 	std::vector<T> GetPage(int n)

@@ -23,6 +23,7 @@ protected:
 	virtual void OnSettings();
 	virtual void OnPrint();
 	virtual void OnChangePage();
+	virtual void OnSelectedOrder();
 	virtual BOOL LoadRegistrySettings(LPCTSTR szKeyName) override;
 	virtual BOOL SaveRegistrySettings() override;
 private:
@@ -34,5 +35,6 @@ private:
 	SettingsDialog dlgSettings;
 	AeronClient m_client;
 	std::vector<Order> m_orders;
+	OrderPager *pager = nullptr;
 };
 

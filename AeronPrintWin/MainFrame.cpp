@@ -49,14 +49,8 @@ BOOL CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
 		case IDC_CONTROLLA:				OnCheckOrders();	return true;
 		case IDC_CERCA:					OnSearch();			return true;
 		case IDC_CANCCERCA:				OnCancelSearch();	return true;
-		case IDC_CMBPAG:
-		{
-			if (HIWORD(wParam) == CBN_SELCHANGE)
-			{
-				OnChangePage();
-			}
-			return true;
-		}
+		case IDC_CMBPAG:				OnChangePage();		return true;
+		case IDC_LIST1:					OnSelectedOrder();	return true;
 		default:
 			break;
 	}
@@ -77,30 +71,35 @@ BOOL CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
 
 void CMainFrame::OnCheckOrders()
 {
-	//MessageBox(_T("Bravo bravo, controlla!"), _T("CMainFrame::OnNotify"), MB_ICONINFORMATION);
-	/*Order o;
-	o.SetRemoteId(18);
-	o.SetCustomerName(_T("O' Ristorante 'ngopp'o mare di Peppino Scapece detto O'Cinese"));
-	m_view.AddOrder(o);*/
-
 	m_view.CanCheckOrders(false);
-	//m_view.Update();
-	auto x = m_client.GetAll(0).then([&](std::vector<Order> orders) {
-		m_orders = orders;
-		/*for (auto &o : m_orders)
-		{
-			m_view.AddOrder(o);
-		}*/
-		OrderPager pager{ m_orders, 20 };
-		m_view.SetPages(pager.Pages());
+	int last_id = 0;
 
-		/*for (auto &o : pager.GetPage(1))
-		{
-			m_view.AddOrder(o);
-		}
-		m_view.UpdateOrders();*/
+	if (m_orders.size() > 0)
+	{
+		auto ptr = std::max_element(m_orders.begin(), m_orders.end(), [](Order& a, Order& b) {
+			return b.GetRemoteId() > a.GetRemoteId();
+		});
+		last_id = ptr->GetRemoteId();
+	}
 
-		OnChangePage();
+	auto x = m_client.GetAll(last_id).then([&](std::vector<Order> orders) {
+		m_orders.reserve(m_orders.size() + orders.size());					// preallocate memory
+		m_orders.insert(m_orders.end(), orders.begin(), orders.end());		// merge vectors
+		std::sort(m_orders.begin(), m_orders.end(), [](Order& a, Order& b) {
+			return b.GetRemoteId() < a.GetRemoteId();						// sort vector descending
+		});
+
+		//OrderPager pager{ m_orders, 20 };
+		delete pager;
+		pager = new OrderPager(m_orders, 20);
+		m_view.SetPages(pager->Pages());
+		m_view.ClearOrders();
+
+		for (auto &o : pager->GetPage(1))
+			m_view.AddOrder(o);
+
+		m_view.Update();
+		
 		SetStatusText(_T("Terminato"));
 		m_view.CanCheckOrders(true);
 		//m_view.Update();
@@ -120,7 +119,7 @@ void CMainFrame::OnSearch()
 	std::vector<Order> matches;
 
 	m_view.CanCheckOrders(false);
-	m_view.Update();
+	//m_view.Update();
 
 	std::copy_if(m_orders.begin(), m_orders.end(), 
 		std::back_inserter(matches), [=](const Order& o) {
@@ -131,19 +130,31 @@ void CMainFrame::OnSearch()
 			return found != std::wstring::npos;
 		}
 	);
-
-	m_view.SetOrders(matches);
-	m_view.UpdateOrders();
-
+	//OrderPager pager{ matches, 20 };
+	delete pager;
+	pager = new OrderPager(matches, 20);
+	m_view.SetPages(pager->Pages());
 	m_view.CanCheckOrders(true);
+	m_view.ClearOrders();
+	for (auto &o : pager->GetPage(1))
+		m_view.AddOrder(o);
+
 	m_view.Update();
 }
 
 void CMainFrame::OnCancelSearch()
 {
-	m_view.SetOrders(m_orders);
-	m_view.UpdateOrders();
-	return;
+	delete pager;
+	pager = new OrderPager(m_orders, 20);
+	m_view.SetPages(pager->Pages());
+	m_view.CanCheckOrders(true);
+	m_view.ClearOrders();
+	int sp = m_view.GetSelectedPage();
+
+	for (auto &o : pager->GetPage(sp))
+		m_view.AddOrder(o);
+
+	m_view.Update();
 }
 
 void CMainFrame::OnSettings()
@@ -203,15 +214,25 @@ void CMainFrame::OnChangePage()
 	{
 		pagenumber = m_view.GetSelectedPage();
 	}
-	catch(std::exception&) {}
-	OrderPager pager{ m_orders, 20 };
-	
-	m_view.ClearOrders();
-	for (auto &o : pager.GetPage(pagenumber))
+	catch(std::exception&) 
 	{
-		m_view.AddOrder(o);
 	}
-	m_view.UpdateOrders();
+
+	//OrderPager pager{ m_orders, 20 };
+	m_view.SetPages(pager->Pages());
+	m_view.ClearOrders();
+
+	for (auto &o : pager->GetPage(pagenumber))
+		m_view.AddOrder(o);
+
+	m_view.Update();
+}
+
+void CMainFrame::OnSelectedOrder()
+{
+	Order o;
+	m_view.GetSelectedOrder(o);
+	MessageBox(o.GetCustomerName().c_str(), _T("Doppio click"), MB_ICONINFORMATION);
 }
 
 BOOL CMainFrame::LoadRegistrySettings(LPCTSTR szKeyName)
@@ -239,7 +260,7 @@ BOOL CMainFrame::LoadRegistrySettings(LPCTSTR szKeyName)
 			if(ERROR_SUCCESS != Key.QueryDWORDValue(_T("PollingTime"), m_pollingTime))
 				throw CWinException(_T("QueryDWORDValue (PollingTime) Failed"));
 
-			m_client.SetApiPath(m_apiAddress.c_str());
+			//m_client.SetApiPath(m_apiAddress.c_str());
 
 			bRet = true;
 
@@ -259,6 +280,8 @@ BOOL CMainFrame::LoadRegistrySettings(LPCTSTR szKeyName)
 
 		SaveRegistrySettings();
 	}
+	
+	m_client.SetApiPath(m_apiAddress.c_str());
 
 	return bRet;
 }
